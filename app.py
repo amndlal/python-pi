@@ -178,9 +178,10 @@ def get_news(topic="world"):
         headlines = []
         for item in items[:8]:
             title = item.find("title").text
+            link = item.find("link").text if item.find("link") is not None else ""
             source = item.find("source").text if item.find("source") is not None else ""
             pub_date = item.find("pubDate").text if item.find("pubDate") is not None else ""
-            headlines.append({"title": title, "source": source, "date": pub_date})
+            headlines.append({"title": title, "source": source, "date": pub_date, "link": link})
         return headlines
     except:
         return []
@@ -193,7 +194,7 @@ with right:
 
     if headlines:
         for h in headlines:
-            st.markdown(f"**{h['title']}**  \n*{h['source']}*")
+            st.markdown(f"[**{h['title']}**]({h['link']})  \n*{h['source']}*")
             st.divider()
     else:
         st.warning("Could not fetch news. Check your internet connection.")
