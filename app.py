@@ -9,6 +9,7 @@ import streamlit as st
 import requests
 import json
 import os
+import xml.etree.ElementTree as ET
 from datetime import datetime
 
 # ============================================================
@@ -166,21 +167,36 @@ with left:
         st.info("No tasks yet. Add one above!")
 
 # --- NEWS ---
+@st.cache_data(ttl=300)
+def get_news(topic="world"):
+    """Fetch real news from Google News RSS (no API key needed)."""
+    try:
+        url = f"https://news.google.com/rss/search?q={topic}&hl=en-IN&gl=IN&ceid=IN:en"
+        response = requests.get(url, timeout=5)
+        root = ET.fromstring(response.content)
+        items = root.findall(".//item")
+        headlines = []
+        for item in items[:8]:
+            title = item.find("title").text
+            source = item.find("source").text if item.find("source") is not None else ""
+            pub_date = item.find("pubDate").text if item.find("pubDate") is not None else ""
+            headlines.append({"title": title, "source": source, "date": pub_date})
+        return headlines
+    except:
+        return []
+
 with right:
-    st.subheader("📰 Top Headlines")
+    st.subheader("📰 Live Headlines")
 
-    headlines = [
-        {"title": "Tech stocks surge as AI adoption accelerates", "source": "Reuters"},
-        {"title": "Germany announces new green energy initiative", "source": "DW"},
-        {"title": "Champions League final breaks viewership records", "source": "ESPN"},
-        {"title": "New study reveals benefits of 4-day work week", "source": "BBC"},
-        {"title": "SpaceX completes historic Mars cargo mission", "source": "CNN"},
-        {"title": "India's economy grows 8.2% in latest quarter", "source": "Economic Times"},
-    ]
+    news_topic = st.selectbox("Topic", ["world", "technology", "business", "sports", "india", "germany"], label_visibility="collapsed")
+    headlines = get_news(news_topic)
 
-    for h in headlines:
-        st.markdown(f"**{h['title']}**  \n*{h['source']}*")
-        st.divider()
+    if headlines:
+        for h in headlines:
+            st.markdown(f"**{h['title']}**  \n*{h['source']}*")
+            st.divider()
+    else:
+        st.warning("Could not fetch news. Check your internet connection.")
 
 # ============================================================
 # QUICK NOTES
